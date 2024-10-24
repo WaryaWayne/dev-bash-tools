@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Prompt user for input and output file types
+read -p "Enter the origin file type (e.g., jpg, png): " originType
+read -p "Enter the destination file type (e.g., webp, jpg): " destType
+
+# Loop through files of the origin type and convert them
+for img in *.$originType; do
+    if [[ -f "$img" ]]; then  # Check if the file exists
+        output="${img%.$originType}.$destType"  # Create output file name
+        ffmpeg -i "$img" "$output"  # Convert image format
+        echo "Converted: $img to $output"  # Output confirmation
+    else
+        echo "No files found with the .$originType extension."  # Error message
+        exit 1  # Exit the script if no files are found
+    fi
+done

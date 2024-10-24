@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Function to print colorized output
+print_colored() {
+    local color=$1
+    local message=$2
+    case $color in
+        "green") echo -e "${GREEN}${message}${NC}" ;;
+        "blue") echo -e "${BLUE}${message}${NC}" ;;
+        "red") echo -e "${RED}${message}${NC}" ;;
+    esac
+}
+
+# Function to handle errors
+handle_error() {
+    print_colored "red" "Error: $1"
+    exit 1
+}
+
+# Function to check dependencies
+check_dependencies() {
+    local missing_deps=()
+    
+    # Check for required commands
+    for cmd in pipenv code git; do
+        if ! command -v "$cmd" > /dev/null 2>&1; then
+            missing_deps+=("$cmd")
+        fi
+    done
+    
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        print_colored "red" "Error: Missing required dependencies:"
+        printf '%s\n' "${missing_deps[@]}"
+        echo "Please install the missing dependencies:"
+        echo "pipenv: pip install pipenv"
+        echo "code: Install Visual Studio Code"
+        echo "git: Install Git"
+        exit 1
+    fi
+}
+
+# Function to validate project name
+validate_project_name() {
+    local name=$1
+    if [[ ! $name =~ ^[a-zA-Z][a-zA-Z0-9_-]*$ ]]; then
+        handle_error "Invalid project name. Use only letters, numbers, hyphens, and underscores. Must start with a letter."
+    fi
+}
+
+# Function to setup VS Code configuration
+setup_vscode() {
+    local pythonPath=$1
+    
+    mkdir -p .vscode || handle_error "Failed to create .vscode directory"
+    
+    # Create VS Code settings.json with proper error handling
+    cat > .vscode/settings.json << EOL || handle_error "Failed to create settings.json"
+{
+    "python.defaultInterpreterPath": "${pythonPath}",
+    "python.analysis.extraPaths": ["."],
+    "editor.formatOnSave": true,
+    "editor.rulers": [80, 100],
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.provider": "black"
+}
+EOL
+}
+
+# Function to create gitignore
+create_gitignore() {
+    cat > .gitignore << EOL || handle_error "Failed to create .gitignore"
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+EOL
+}
+
+# Main execution starts here
+trap 'handle_error "Script interrupted"' INT TERM
+
+# Check dependencies first
+check_dependencies
+
+# Print welcome message
+print_colored "green" "🚀 Quick Project Setup"
+print_colored "blue" "Enter project name:"
+read -p "> " projectName
+
+# Validate project name
+validate_project_name "$projectName"
+
+# Create project directory in ~/Desktop/projects
+projectDir="$HOME/Desktop/projects/$projectName"
+if [ -d "$projectDir" ]; then
+    handle_error "Project directory already exists!"
+fi
+
+mkdir -p "$projectDir" || handle_error "Failed to create project directory"
+cd "$projectDir" || handle_error "Failed to change to project directory"
+
+# Initialize pipenv with error handling
+print_colored "blue" "Setting up Python virtual environment..."
+pipenv install || handle_error "Failed to initialize pipenv environment"
+
+# Get Python path with error handling
+pythonPath=$(pipenv --venv)/bin/python
+if [ ! -f "$pythonPath" ]; then
+    handle_error "Failed to locate Python interpreter"
+fi
+
+# Setup VS Code settings
+setup_vscode "$pythonPath"
+
+# Create gitignore
+create_gitignore
+
+# Initialize git repository
+print_colored "blue" "Initializing Git repository..."
+git init || handle_error "Failed to initialize Git repository"
+git add . || handle_error "Failed to stage files"
+git commit -m "Initial commit" || handle_error "Failed to create initial commit"
+
+# Open VS Code
+print_colored "green" "Opening VS Code..."
+code . || handle_error "Failed to open VS Code"
+
+print_colored "green" "✨ Project setup complete! Happy coding!"
+print_colored "blue" "To activate the virtual environment, run: pipenv shell"
+
+# Optional: Print additional helpful information
+echo
+print_colored "blue" "Recommended next steps:"
+echo "1. cd $projectDir"
+echo "2. pipenv shell"
+echo "3. pipenv install pytest black pylint (recommended dev dependencies)"

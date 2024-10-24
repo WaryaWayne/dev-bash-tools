@@ -1,0 +1,44 @@
+#!/bin/bash
+# Script to set VS Code Python interpreter based on Pipenv virtual environment
+
+# Check if Pipenv is installed
+if ! command -v pipenv &> /dev/null; then
+  echo "Error: Pipenv is not installed. Please install it first."
+  exit 1
+fi
+
+# Get the Pipenv project's root directory
+PROJECT_ROOT=$(pipenv --venv 2>/dev/null)
+if [[ -z "$PROJECT_ROOT" ]]; then
+  echo "Error: No Pipenv virtual environment found. Make sure you're in a Pipenv project."
+  exit 1
+fi
+
+# Construct the Python interpreter path
+PYTHON_PATH="$PROJECT_ROOT/bin/python"
+
+# Check if the Python interpreter path exists
+if [[ ! -f "$PYTHON_PATH" ]]; then
+  echo "Error: Python interpreter not found at $PYTHON_PATH"
+  exit 1
+fi
+
+# Create or update the VS Code settings file with the interpreter path
+VSCODE_SETTINGS_DIR=".vscode"
+VSCODE_SETTINGS_FILE="$VSCODE_SETTINGS_DIR/settings.json"
+
+# Create .vscode directory if it doesn't exist
+if [[ ! -d "$VSCODE_SETTINGS_DIR" ]]; then
+  mkdir "$VSCODE_SETTINGS_DIR"
+fi
+
+# Update settings.json with the interpreter path
+if [[ -f "$VSCODE_SETTINGS_FILE" ]]; then
+  # If settings.json already exists, update the python interpreter path
+  jq --arg path "$PYTHON_PATH" '.["python.pythonPath"] = $path' "$VSCODE_SETTINGS_FILE" > "$VSCODE_SETTINGS_FILE.tmp" && mv "$VSCODE_SETTINGS_FILE.tmp" "$VSCODE_SETTINGS_FILE"
+else
+  # Create a new settings.json file with the python interpreter path
+  echo "{ \"python.pythonPath\": \"$PYTHON_PATH\" }" > "$VSCODE_SETTINGS_FILE"
+fi
+
+echo "VS Code Python interpreter set to: $PYTHON_PATH"

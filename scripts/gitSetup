@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# Colors for better output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_colored() {
+    local color=$1
+    local message=$2
+    case $color in
+        "green") echo -e "${GREEN}${message}${NC}" ;;
+        "blue") echo -e "${BLUE}${message}${NC}" ;;
+        "red") echo -e "${RED}${message}${NC}" ;;
+    esac
+}
+
+# Function to handle errors
+handle_error() {
+    print_colored "red" "Error: $1"
+    exit 1
+}
+
+# Check if git is installed
+if ! command -v git &> /dev/null; then
+    handle_error "Git is not installed. Please install Git and try again."
+fi
+
+# Step 1: Initialize Git repository
+print_colored "blue" "Initializing Git repository..."
+if ! git init; then
+    handle_error "Failed to initialize Git repository"
+fi
+print_colored "green" "Git repository initialized successfully"
+
+# Step 2: Add specific files to staging
+print_colored "blue" "Enter the files or directories you want to add (space-separated):"
+read -r files
+
+# Validate if files exist before adding
+for file in $files; do
+    if [ ! -e "$file" ]; then
+        handle_error "File or directory '$file' does not exist"
+    fi
+done
+
+# Use the user input to add the files
+print_colored "blue" "Adding files to staging..."
+if ! git add $files; then
+    handle_error "Failed to add files to staging"
+fi
+print_colored "green" "Files added successfully"
+
+# Step 3: Rename the default branch from 'main' to 'master'
+print_colored "blue" "Renaming default branch to 'master'..."
+if ! git branch -M master; then
+    handle_error "Failed to rename branch to 'master'"
+fi
+print_colored "green" "Branch renamed successfully"
+
+# Step 4: Commit with a default message
+print_colored "blue" "Enter the project name for the initial commit:"
+read -r project_name
+
+# Validate project name is not empty
+if [ -z "$project_name" ]; then
+    handle_error "Project name cannot be empty"
+fi
+
+# Commit with a message that includes the project name
+print_colored "blue" "Creating initial commit..."
+if ! git commit -m "Initial commit to setup $project_name"; then
+    handle_error "Failed to create initial commit"
+fi
+print_colored "green" "Initial commit created successfully"
+
+# Show confirmation message and status
+print_colored "green" "Git repository has been initialized, branch renamed to 'master', and initial commit made for '$project_name'."
+echo
+print_colored "blue" "Current repository status:"
+git status
+
+print_colored "green" "Setup complete! 🎉"
+print_colored "blue" "Next steps:"
+echo "1. Add a remote repository: git remote add origin <repository-url>"
+echo "2. Push your changes: git push -u origin master"

@@ -1,0 +1,225 @@
+#!/bin/bash
+
+# Project Setup Script for Bash/ZSH
+# Supports: Backend (Django), Frontend (React + Vite + TS/JS), or both
+
+# Color setup for bash
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+function command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+function to_upper() {
+    echo "$1" | tr '[:lower:]' '[:upper:]'
+}
+
+function to_lower() {
+    echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+function check_dependencies() {
+    local missing_deps=()
+    
+    if ! command_exists pipenv; then
+        missing_deps+=("pipenv")
+    fi
+    if ! command_exists yarn; then
+        missing_deps+=("yarn")
+    fi
+    if ! command_exists node; then
+        missing_deps+=("node")
+    fi
+    
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        echo -e "${RED}Error: Missing required dependencies:${NC}"
+        printf '%s\n' "${missing_deps[@]}"
+        echo "Please install the missing dependencies and try again."
+        echo "You can use: brew install ${missing_deps[*]}"
+        exit 1
+    fi
+}
+
+function setup_backend() {
+    echo -e "\n${GREEN}Setting up backend...${NC}"
+    mkdir -p backend
+    cd backend || exit 1
+    pipenv install django
+    
+    read -p "Enter Django project name [django_project]: " djangoProjectName
+    djangoProjectName=${djangoProjectName:-django_project}
+    echo "Using project name: $djangoProjectName"
+    
+    pipenv run django-admin startproject $djangoProjectName .
+    
+    read -p "Do you want to create any Django apps? (y/N): " createApps
+    createApps=$(to_lower "$createApps")
+    if [ "$createApps" = "y" ]; then
+        read -p "Enter app names separated by space: " appNames
+        # Use proper array handling in bash
+        read -ra appsArray <<< "$appNames"
+        for app in "${appsArray[@]}"; do
+            # Create the app using pipenv
+            pipenv run python manage.py startapp "$app"
+            echo "Created and registered Django app: $app"
+        done
+    fi
+    cd ..
+}
+
+function setup_frontend() {
+    echo -e "\n${GREEN}Setting up frontend...${NC}"
+    mkdir -p frontend
+    cd frontend || exit 1
+    
+    read -p "Enter React project name [react-app]: " reactProjectName
+    reactProjectName=${reactProjectName:-react-app}
+    echo "Using project name: $reactProjectName"
+    
+    echo -e "\n${BLUE}Select a frontend framework:${NC}"
+    echo "1) React (JavaScript)"
+    echo "2) React + SWC (JavaScript)"
+    echo "3) React + TypeScript"
+    echo "4) React + SWC + TypeScript"
+    
+    read -p "Choose a framework (1-4): " frameworkChoice
+    frameworkChoice=${frameworkChoice:-1}
+    
+    local template
+    case $frameworkChoice in
+        1) template="react" ;;
+        2) template="react-swc" ;;
+        3) template="react-ts" ;;
+        4) template="react-swc-ts" ;;
+        *) template="react" ;;
+    esac
+    
+    yarn create vite $reactProjectName --template $template
+    
+    cd $reactProjectName || exit 1
+    yarn install
+    
+    read -p "Do you want to set up Tailwind CSS? (y/N): " setupTailwind
+    setupTailwind=$(to_lower "$setupTailwind")
+    if [ "$setupTailwind" = "y" ]; then
+        yarn add -D tailwindcss postcss autoprefixer
+        yarn tailwindcss init -p
+        
+        # Configure Tailwind CSS
+        cat > tailwind.config.js << 'EOL'
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+EOL
+
+        cat > src/index.css << 'EOL'
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+EOL
+        
+        echo "Tailwind CSS setup complete!"
+    fi
+    
+    # TypeScript configuration
+    if [[ $template == *"ts"* ]]; then
+        read -p "Configure TypeScript paths aliases? (y/N): " setupTSPaths
+        setupTSPaths=$(to_lower "$setupTSPaths")
+        if [ "$setupTSPaths" = "y" ]; then
+            # Create base directories
+            mkdir -p src/{components,pages,utils,hooks,types}
+            
+            # Create tsconfig.paths.json
+            cat > tsconfig.paths.json << 'EOL'
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@types/*": ["./src/types/*"]
+    }
+  }
+}
+EOL
+
+            # Update tsconfig.json safely using temporary file
+            cat tsconfig.json > tsconfig.tmp
+            echo '{
+  "extends": "./tsconfig.paths.json",' > tsconfig.json
+            tail -n +2 tsconfig.tmp >> tsconfig.json
+            rm tsconfig.tmp
+            
+            echo "TypeScript paths configured and directories created!"
+        fi
+    fi
+    
+    cd ../..
+}
+
+# Main script execution
+check_dependencies
+
+echo -e "${GREEN}Choose your project setup:${NC}"
+echo "BF - Backend and Frontend"
+echo "B  - Backend only"
+echo "F  - Frontend only"
+
+attempts=0
+while true; do
+    read -p "Enter your choice (BF/B/F): " setupType
+    setupType=$(to_upper "$setupType")
+    
+    case "$setupType" in
+        "BF"|"B"|"F")
+            break
+            ;;
+        *)
+            ((attempts++))
+            if ((attempts >= 2)); then
+                echo -e "${YELLOW}Too many invalid attempts. You can exit with Ctrl+C or Ctrl+D if needed.${NC}"
+            fi
+            echo -e "${RED}Invalid choice. Please enter BF, B, or F.${NC}"
+            ;;
+    esac
+done
+
+case "$setupType" in
+    "BF")
+        setup_backend
+        setup_frontend
+        ;;
+    "B")
+        setup_backend
+        ;;
+    "F")
+        setup_frontend
+        ;;
+esac
+
+echo -e "\n${GREEN}Setup complete!${NC}"
+
+if [ "$setupType" = "BF" ] || [ "$setupType" = "F" ]; then
+    echo -e "\n${YELLOW}Frontend development server can be started with:${NC}"
+    echo "cd frontend/$reactProjectName && yarn dev"
+fi
+
+if [ "$setupType" = "BF" ] || [ "$setupType" = "B" ]; then
+    echo -e "\n${YELLOW}Backend development server can be started with:${NC}"
+    echo "cd backend && pipenv run python manage.py runserver"
+fi
