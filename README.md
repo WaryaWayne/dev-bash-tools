@@ -11,10 +11,10 @@ This script automates the setup of a new Python project with Pipenv in Visual St
 defStart
 ```
 
-### setvsenv
+### setVsco
 This script sets the Python interpreter for Visual Studio Code based on the active Pipenv virtual environment. It checks for Pipenv installation, retrieves the virtual environment's path, and updates the VS Code settings accordingly.
 ```bash
-setvsenv
+setVsco
 ```
 
 ### conImg
