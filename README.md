@@ -27,10 +27,10 @@ Initializes a Git repository with custom configurations. It will ask for files t
 gitsetup
 ```
 
-### djangoreact
+### DjangoReact
 This script automates the setup of a full-stack project, supporting either a backend (Django), a frontend (React with Vite), or both. It checks for necessary dependencies, creates project directories, and initializes the chosen frameworks.
 ```bash
-djangoreact
+DjangoReact
 ```
 
 ## 🚀 Installation
