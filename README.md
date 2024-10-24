@@ -21,16 +21,16 @@ This script automates the conversion of image files from one format to another u
 conImg
 ```
 
-### gitsetup
+### gitSetup
 Initializes a Git repository with custom configurations. It will ask for files to add to staging, rename main branch to master, and ask for project name to create an initial commit. 
 ```bash
-gitsetup
+gitSetup
 ```
 
-### DjangoReact
+### djangoReact
 This script automates the setup of a full-stack project, supporting either a backend (Django), a frontend (React with Vite), or both. It checks for necessary dependencies, creates project directories, and initializes the chosen frameworks.
 ```bash
-DjangoReact
+djangoReact
 ```
 
 ## 🚀 Installation
