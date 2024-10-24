@@ -3,10 +3,12 @@ A collection of helpful command-line tools for developers to automate common tas
 
 ## 🛠 Tools Included
 
-### quickproject 
+# Commands
+
+### defStart 
 This script automates the setup of a new Python project with Pipenv in Visual Studio Code, including environment management, project structure, and essential configuration files.
 ```bash
-quickproject
+defStart
 ```
 
 ### setvsenv
@@ -15,11 +17,10 @@ This script sets the Python interpreter for Visual Studio Code based on the acti
 setvsenv
 ```
 
-
-### imgconvert
+### conImg
 This script automates the conversion of image files from one format to another using ffmpeg. It prompts the user for the original file type and the desired output file type, then processes all matching files in the current directory.
 ```bash
-imgconvert
+conImg
 ```
 
 ### gitsetup
