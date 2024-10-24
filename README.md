@@ -1,9 +1,7 @@
 # DevTools
 A collection of helpful command-line tools for developers to automate common tasks.
 
-## 🛠 Tools Included
-
-# Commands
+## 🛠 Commands list
 
 ### defStart 
 This script automates the setup of a new Python project with Pipenv in Visual Studio Code, including environment management, project structure, and essential configuration files.
