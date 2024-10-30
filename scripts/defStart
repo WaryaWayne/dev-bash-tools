@@ -39,7 +39,7 @@ check_dependencies() {
         printf '%s\n' "${missing_deps[@]}"
         echo "Please install the missing dependencies:"
         echo "pipenv: pip install pipenv"
-        echo "code: Install Visual Studio Code"
+        echo "Install Visual Studio Code"
         echo "git: Install Git"
         exit 1
     fi
@@ -68,45 +68,8 @@ setup_vscode() {
     "editor.rulers": [80, 100],
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.formatting.provider": "black"
 }
 EOL
-}
-
-# Function to create gitignore
-create_gitignore() {
-    cat > .gitignore << EOL || handle_error "Failed to create .gitignore"
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.env
-.venv
-venv/
-ENV/
-.pytest_cache/
-.coverage
-htmlcov/
-
-# VS Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# IDE
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-EOL
-}
 
 # Main execution starts here
 trap 'handle_error "Script interrupted"' INT TERM
@@ -144,15 +107,6 @@ fi
 # Setup VS Code settings
 setup_vscode "$pythonPath"
 
-# Create gitignore
-create_gitignore
-
-# Initialize git repository
-print_colored "blue" "Initializing Git repository..."
-git init || handle_error "Failed to initialize Git repository"
-git add . || handle_error "Failed to stage files"
-git commit -m "Initial commit" || handle_error "Failed to create initial commit"
-
 # Open VS Code
 print_colored "green" "Opening VS Code..."
 code . || handle_error "Failed to open VS Code"
@@ -165,4 +119,3 @@ echo
 print_colored "blue" "Recommended next steps:"
 echo "1. cd $projectDir"
 echo "2. pipenv shell"
-echo "3. pipenv install pytest black pylint (recommended dev dependencies)"
