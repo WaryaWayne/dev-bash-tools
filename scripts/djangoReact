@@ -64,8 +64,8 @@ function setup_backend() {
         read -ra appsArray <<< "$appNames"
         for app in "${appsArray[@]}"; do
             # Create the app using pipenv
-            pipenv run python manage.py startapp "$app"
-            echo "Created and registered Django app: $app"
+            python manage.py startapp "$app"
+            echo "Created Django app: $app. Remember to register it."
         done
     fi
     cd ..
