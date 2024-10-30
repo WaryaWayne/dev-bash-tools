@@ -26,14 +26,14 @@ handle_error() {
 # Function to check dependencies
 check_dependencies() {
     local missing_deps=()
-    
+
     # Check for required commands
     for cmd in pipenv code git; do
         if ! command -v "$cmd" > /dev/null 2>&1; then
             missing_deps+=("$cmd")
         fi
     done
-    
+
     if [ ${#missing_deps[@]} -gt 0 ]; then
         print_colored "red" "Error: Missing required dependencies:"
         printf '%s\n' "${missing_deps[@]}"
@@ -56,9 +56,9 @@ validate_project_name() {
 # Function to setup VS Code configuration
 setup_vscode() {
     local pythonPath=$1
-    
+
     mkdir -p .vscode || handle_error "Failed to create .vscode directory"
-    
+
     # Create VS Code settings.json with proper error handling
     cat > .vscode/settings.json << EOL || handle_error "Failed to create settings.json"
 {
@@ -70,6 +70,7 @@ setup_vscode() {
     "files.insertFinalNewline": true,
 }
 EOL
+}
 
 # Main execution starts here
 trap 'handle_error "Script interrupted"' INT TERM
