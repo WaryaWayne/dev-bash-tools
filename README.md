@@ -37,7 +37,7 @@ djangoReact
 Clone this repository:
 ```bash
 git clone https://github.com/WaryaWayne/dev-tools.git
-cd devtools
+cd dev-tools
 ```
 
 ## Run the installer:
