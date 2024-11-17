@@ -9,7 +9,18 @@ NC='\033[0m' # No Color
 # Installation directories
 INSTALL_DIR="$HOME/.local/bin"
 TOOLS_DIR="$HOME/.local/share/devtools"
-SCRIPTS_DIR="scripts" # Assuming scripts are in a directory named 'scripts' at the same level as this script
+SCRIPTS_DIR="scripts"
+
+# Available scripts with descriptions
+declare -A SCRIPTS
+SCRIPTS=(
+    ["1|defStart"]="Automates Python project setup with Pipenv and VS Code configuration"
+    ["2|setVsco"]="Sets Python interpreter in VS Code for Pipenv environments"
+    ["3|conImg"]="Converts image files between formats using ffmpeg"
+    ["4|gitSetup"]="Initializes Git repository with custom configurations"
+    ["5|djangoReact"]="Sets up Django backend and/or React frontend projects"
+    ["6|stripeSetup"]="Configures Stripe integration for web applications"
+)
 
 # Print colored message
 print_colored() {
@@ -18,7 +29,66 @@ print_colored() {
     echo -e "${color}${message}${NC}"
 }
 
-# Check for required commands
+# Display available scripts
+show_scripts() {
+    print_colored "$BLUE" "\nAvailable scripts:"
+    for key in "${!SCRIPTS[@]}"; do
+        local num=$(echo "$key" | cut -d'|' -f1)
+        local name=$(echo "$key" | cut -d'|' -f2)
+        echo -e "${GREEN}$num${NC}) $name"
+        echo "   ${SCRIPTS[$key]}"
+    done
+}
+
+# Validate script selection
+validate_selection() {
+    local selection=$1
+    local valid=0
+    
+    # Check if it's a number
+    if [[ $selection =~ ^[0-9]+$ ]]; then
+        for key in "${!SCRIPTS[@]}"; do
+            local num=$(echo "$key" | cut -d'|' -f1)
+            if [ "$selection" = "$num" ]; then
+                valid=1
+                break
+            fi
+        done
+    else
+        # Check if it's a script name
+        for key in "${!SCRIPTS[@]}"; do
+            local name=$(echo "$key" | cut -d'|' -f2)
+            if [ "$selection" = "$name" ]; then
+                valid=1
+                break
+            fi
+        done
+    fi
+    
+    return $valid
+}
+
+# Get script name from selection
+get_script_name() {
+    local selection=$1
+    
+    # If it's a number, get the corresponding script name
+    if [[ $selection =~ ^[0-9]+$ ]]; then
+        for key in "${!SCRIPTS[@]}"; do
+            local num=$(echo "$key" | cut -d'|' -f1)
+            local name=$(echo "$key" | cut -d'|' -f2)
+            if [ "$selection" = "$num" ]; then
+                echo "$name"
+                return
+            fi
+        done
+    else
+        # If it's a name, return it directly
+        echo "$selection"
+    fi
+}
+
+# Check dependencies
 check_dependencies() {
     local missing_deps=()
     
@@ -38,30 +108,42 @@ check_dependencies() {
 
 # Main installation
 main() {
-    print_colored "$BLUE" "Starting installation of devtools..."
+    print_colored "$BLUE" "Welcome to devtools installer!"
     
-    # Check dependencies
-    check_dependencies
+    # Show available scripts
+    show_scripts
+    
+    # Prompt for selection
+    print_colored "$BLUE" "\nEnter the numbers or names of scripts to install (space-separated):"
+    read -r selections
     
     # Create necessary directories
     mkdir -p "$INSTALL_DIR"
     mkdir -p "$TOOLS_DIR"
     
-    # Copy scripts to tools directory
-    print_colored "$BLUE" "Copying scripts from $SCRIPTS_DIR..."
-    cp -r "$SCRIPTS_DIR/"* "$TOOLS_DIR/" || {
-        print_colored "$RED" "Error: Failed to copy scripts."
-        exit 1
-    }
-    
-    # Make scripts executable
-    chmod +x "$TOOLS_DIR"/*
-    
-    # Create symbolic links in bin directory
-    print_colored "$BLUE" "Creating command links..."
-    for script in "$TOOLS_DIR"/*; do
-        name=$(basename "$script")
-        ln -sf "$script" "$INSTALL_DIR/${name%.*}"
+    # Process each selection
+    for selection in $selections; do
+        if ! validate_selection "$selection"; then
+            print_colored "$RED" "Invalid selection: $selection"
+            continue
+        fi
+        
+        script_name=$(get_script_name "$selection")
+        print_colored "$BLUE" "Installing $script_name..."
+        
+        # Copy script to tools directory
+        cp "$SCRIPTS_DIR/$script_name" "$TOOLS_DIR/" || {
+            print_colored "$RED" "Error: Failed to copy $script_name"
+            continue
+        }
+        
+        # Make script executable
+        chmod +x "$TOOLS_DIR/$script_name"
+        
+        # Create symbolic link
+        ln -sf "$TOOLS_DIR/$script_name" "$INSTALL_DIR/$script_name"
+        
+        print_colored "$GREEN" "✓ Installed $script_name"
     done
     
     # Add to PATH if not already there
@@ -77,4 +159,8 @@ main() {
     echo "source ~/.zshrc   # if using zsh"
 }
 
+# Check dependencies first
+check_dependencies
+
+# Run main installation
 main "$@"
